@@ -14,6 +14,10 @@ import android.widget.CheckBox;
 import android.widget.CursorAdapter;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+import android.os.Looper;
+import android.os.Message;
+
+import java.util.Calendar;
 
 import dam.isi.frsf.utn.edu.ar.lab05.dao.ProyectoDAO;
 import dam.isi.frsf.utn.edu.ar.lab05.dao.ProyectoDBMetadata;
@@ -25,6 +29,9 @@ public class TareaCursorAdapter extends CursorAdapter {
     private LayoutInflater inflador;
     private ProyectoDAO myDao;
     private Context contexto;
+    Calendar fin;
+    Calendar inicio;
+
     public TareaCursorAdapter (Context contexto, Cursor c, ProyectoDAO dao) {
         super(contexto, c, false);
         myDao= dao;
@@ -54,7 +61,7 @@ public class TareaCursorAdapter extends CursorAdapter {
 
         final Button btnFinalizar = (Button)   view.findViewById(R.id.tareaBtnFinalizada);
         final Button btnEditar = (Button)   view.findViewById(R.id.tareaBtnEditarDatos);
-        ToggleButton btnEstado = (ToggleButton) view.findViewById(R.id.tareaBtnTrabajando);
+        final ToggleButton btnEstado = (ToggleButton) view.findViewById(R.id.tareaBtnTrabajando);
 
         nombre.setText(cursor.getString(cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.TAREA)));
         Integer horasAsigandas = cursor.getInt(cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.HORAS_PLANIFICADAS));
@@ -90,11 +97,67 @@ public class TareaCursorAdapter extends CursorAdapter {
                     public void run() {
                         Log.d("LAB05-MAIN","finalizar tarea : --- "+idTarea);
                         myDao.finalizar(idTarea);
+                        handlerRefresh.sendEmptyMessage(1);
                     }
                 });
                 backGroundUpdate.start();
             }
         });
+
+        ObjetoComplejo oc = new ObjetoComplejo(cursor.getColumnIndex("_id"), cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.MINUTOS_TRABAJADOS));
+
+        btnEstado.setTag(oc);
+        btnEstado.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if(btnEstado.isChecked()){
+                    inicio=Calendar.getInstance();
+                }
+                else{
+                    fin=Calendar.getInstance();
+                    long tiempoTotalEnMS = fin.getTimeInMillis()-inicio.getTimeInMillis();
+                    double minutos = (float) (tiempoTotalEnMS/5000.0);
+                    final ObjetoComplejo objetocomplejo = (ObjetoComplejo)view.getTag();
+                    objetocomplejo.tiempoTrabajado+=minutos;
+
+
+                    Thread backGroundUpdate = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d("LAB05-MAIN","Actualizar tiempo trabajado : --- "+objetocomplejo.id);
+                            myDao.actualizarTiempoTrabajo(objetocomplejo.id, objetocomplejo.tiempoTrabajado);
+                        }
+                    });
+                    backGroundUpdate.start();
+
+                }
+            }
+        });
+
+
+        }
+
+    Handler handlerRefresh = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message inputMessage) {
+            TareaCursorAdapter.this.changeCursor(myDao.listaTareas(1));
+        }
+    };
+
+
+    public class ObjetoComplejo{
+        Integer id;
+        double tiempoTrabajado;
+
+
+        ObjetoComplejo(Integer entero, double tiempoTrabajad){
+            id=entero;
+            tiempoTrabajado=tiempoTrabajad;
+        }
+
     }
+
+
 }
 
