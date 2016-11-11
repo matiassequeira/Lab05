@@ -62,6 +62,7 @@ public class TareaCursorAdapter extends CursorAdapter {
         final Button btnFinalizar = (Button)   view.findViewById(R.id.tareaBtnFinalizada);
         final Button btnEditar = (Button)   view.findViewById(R.id.tareaBtnEditarDatos);
         final ToggleButton btnEstado = (ToggleButton) view.findViewById(R.id.tareaBtnTrabajando);
+        final Button btnEliminar = (Button) view.findViewById(R.id.buttonEliminar);
 
         nombre.setText(cursor.getString(cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.TAREA)));
         Integer horasAsigandas = cursor.getInt(cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.HORAS_PLANIFICADAS));
@@ -69,6 +70,7 @@ public class TareaCursorAdapter extends CursorAdapter {
 
         Integer minutosAsigandos = cursor.getInt(cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.MINUTOS_TRABAJADOS));
         tiempoTrabajado.setText(minutosAsigandos+ " minutos");
+
         String p = cursor.getString(cursor.getColumnIndex(ProyectoDBMetadata.TablaPrioridadMetadata.PRIORIDAD_ALIAS));
         prioridad.setText(p);
         responsable.setText(cursor.getString(cursor.getColumnIndex(ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO_ALIAS)));
@@ -81,7 +83,8 @@ public class TareaCursorAdapter extends CursorAdapter {
             public void onClick(View view) {
                 final Integer idTarea= (Integer) view.getTag();
                 Intent intEditarAct = new Intent(contexto,AltaTareaActivity.class);
-                intEditarAct.putExtra("ID_TAREA",idTarea);
+                intEditarAct.putExtra("UPDATE",true);
+                intEditarAct.putExtra("ID_TAREA", idTarea);
                 context.startActivity(intEditarAct);
 
             }
@@ -104,7 +107,17 @@ public class TareaCursorAdapter extends CursorAdapter {
             }
         });
 
-        ObjetoComplejo oc = new ObjetoComplejo(cursor.getColumnIndex("_id"), cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.MINUTOS_TRABAJADOS));
+        btnEliminar.setTag(cursor.getInt(cursor.getColumnIndex("_id")));
+        btnEliminar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final Integer idTarea= (Integer) view.getTag();
+                myDao.borrarTarea(idTarea);
+                handlerRefresh.sendEmptyMessage(1);
+            }
+        });
+
+        ObjetoComplejo oc = new ObjetoComplejo(cursor.getInt(cursor.getColumnIndex("_id")), cursor.getInt(cursor.getColumnIndex(ProyectoDBMetadata.TablaTareasMetadata.MINUTOS_TRABAJADOS)));
 
         btnEstado.setTag(oc);
         btnEstado.setOnClickListener(new View.OnClickListener() {
@@ -125,10 +138,12 @@ public class TareaCursorAdapter extends CursorAdapter {
                     Thread backGroundUpdate = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d("LAB05-MAIN","Actualizar tiempo trabajado : --- "+objetocomplejo.id);
+                            Log.d("LAB05-MAIN","Actualizar tiempo trabajado : --- "+objetocomplejo.id+"   Tiempo trabajado:"+objetocomplejo.tiempoTrabajado);
                             myDao.actualizarTiempoTrabajo(objetocomplejo.id, objetocomplejo.tiempoTrabajado);
+                            handlerRefresh.sendEmptyMessage(1);
                         }
                     });
+
                     backGroundUpdate.start();
 
                 }

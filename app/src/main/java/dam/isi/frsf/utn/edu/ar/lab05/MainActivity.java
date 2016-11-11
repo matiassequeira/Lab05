@@ -15,6 +15,8 @@ import android.view.MenuItem;
 import android.widget.ListView;
 
 
+import java.io.Serializable;
+
 import dam.isi.frsf.utn.edu.ar.lab05.dao.ProyectoDAO;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intActAlta= new Intent(MainActivity.this,AltaTareaActivity.class);
+                intActAlta.putExtra("UPDATE", false);
                 intActAlta.putExtra("ID_TAREA", 0);
                 startActivity(intActAlta);
             }
@@ -85,6 +88,9 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+        else if (id== R.id.consDesvio){
+            Hacer intent a actividad de consulta
         }
 
         return super.onOptionsItemSelected(item);
