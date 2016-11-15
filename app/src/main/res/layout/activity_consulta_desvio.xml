@@ -14,7 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Cantidad mínima de minutos desviados"
+        android:text="Cantidad máxima de minutos desviados"
         android:id="@+id/txtViewMinutosDesviados" />
     <EditText
         android:layout_width="match_parent"

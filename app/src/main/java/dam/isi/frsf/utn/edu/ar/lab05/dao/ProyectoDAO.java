@@ -68,14 +68,17 @@ public class ProyectoDAO {
         db = dbHelper.getReadableDatabase();
         Usuario usr = new Usuario();
         Cursor cursor = db.rawQuery("SELECT * FROM "+ProyectoDBMetadata.TABLA_USUARIOS+" WHERE "+ProyectoDBMetadata.TablaUsuariosMetadata._ID+"= "+id,null);
-        cursor.moveToFirst();
-        usr.setId(cursor.getInt(0));
-        usr.setNombre(cursor.getString(1));
-        usr.setCorreoElectronico(cursor.getString(2));
-        return usr;
+        if (cursor.moveToFirst()) {
+            usr.setId(cursor.getInt(0));
+            usr.setNombre(cursor.getString(1));
+            usr.setCorreoElectronico(cursor.getString(2));
+            return usr;
+        }
+        else return null;
     }
 
     public Cursor listaTareas(Integer idProyecto){
+        db = dbHelper.getReadableDatabase();
         Cursor cursorPry = db.rawQuery("SELECT "+ProyectoDBMetadata.TablaProyectoMetadata._ID+ " FROM "+ProyectoDBMetadata.TABLA_PROYECTO,null);
         Integer idPry= 0;
         if(cursorPry.moveToFirst()){

@@ -38,12 +38,12 @@ public class ConsultaDesvioActivity extends AppCompatActivity implements View.On
     }
 
     @Override
-    public void busquedaFinalizada(List<Tarea> tareasDesviadas) {
-        String
-        for(Tarea t: tareasDesviadas){
-            String
+    public void busquedaFinalizada(List<Tarea> tareaDesviadas) {
+        //String tareas;
+        tareasDesviadas.setText("");
+        for(Tarea t: tareaDesviadas){
+            tareasDesviadas.append("Descripción: "+t.getDescripcion()+'\n');
         }
-
     }
 
     @Override

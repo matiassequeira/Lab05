@@ -90,7 +90,8 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         else if (id== R.id.consDesvio){
-            Hacer intent a actividad de consulta
+           Intent intent = new Intent(this,ConsultaDesvioActivity.class);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);
