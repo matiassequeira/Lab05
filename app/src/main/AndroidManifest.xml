@@ -19,7 +19,10 @@
             </intent-filter>
         </activity>
         <activity android:name=".AltaTareaActivity" />
-        <activity android:name=".ConsultaDesvioActivity"></activity>
+        <activity android:name=".ConsultaDesvioActivity" />
+        <activity android:name=".AltaUsuarioActivity"></activity>
+
     </application>
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
 </manifest>
