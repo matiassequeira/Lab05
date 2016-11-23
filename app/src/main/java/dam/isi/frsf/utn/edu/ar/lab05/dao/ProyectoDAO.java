@@ -95,8 +95,17 @@ public class ProyectoDAO {
         Cursor cursorUsuarios = db.rawQuery("SELECT rowid _id, NOMBRE FROM USUARIOS", null);
         return cursorUsuarios;
     }
+
+    public void guardarUsuario(Usuario u){
+        db = dbHelper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO_ALIAS, u.getNombre());
+        cv.put(ProyectoDBMetadata.TablaUsuariosMetadata.MAIL,u.getCorreoElectronico());
+        db.insert(ProyectoDBMetadata.TABLA_USUARIOS, ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO,cv);
+
+    }
     public void nuevaTarea(Tarea t){
-        db = dbHelper.getReadableDatabase();
+        db = dbHelper.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(ProyectoDBMetadata.TablaTareasMetadata.TAREA,t.getDescripcion());
         cv.put(ProyectoDBMetadata.TablaTareasMetadata.HORAS_PLANIFICADAS,t.getHorasEstimadas());

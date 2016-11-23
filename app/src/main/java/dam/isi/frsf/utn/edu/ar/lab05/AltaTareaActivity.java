@@ -21,6 +21,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+
 import dam.isi.frsf.utn.edu.ar.lab05.dao.ProyectoDAO;
 import dam.isi.frsf.utn.edu.ar.lab05.dao.ProyectoDBMetadata;
 import dam.isi.frsf.utn.edu.ar.lab05.modelo.Prioridad;
@@ -127,7 +133,7 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
     private void buscarContacto(String nombreBuscado) {
         JSONArray arr = new JSONArray();
         final StringBuilder resultado = new StringBuilder();
-        Uri uri = ContactsContract.Contacts.CONTENT_URI;
+        Uri uri = ContactsContract.Data.CONTENT_URI;
         String sortOrder = ContactsContract.Contacts.DISPLAY_NAME + " COLLATE LOCALIZED ASC";
 
         // consulta ejemplo buscando por nombre visualizado en los contactos agregados
@@ -151,14 +157,95 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
                 Log.d("TEST-ARR","fila : "+fila);
 
                 // elegir columnas de ejemplo
-                resultado.append(unContacto.get("name_raw_contact_id")
-                        +" - "+unContacto.get("display_name")+
-                        System.getProperty("line.separator"));
+                //resultado.append(unContacto.get("name_raw_contact_id")
+                //        +" - "+unContacto.get("display_name")+ " - "+ unContacto.get("data1"));
+
+                guardarUsuario(new Usuario(0, (String) unContacto.get("display_name"), (String) unContacto.get("data1") ));
+                break;
+                //String email=buscarEmail((String) unContacto.get("name_raw_contact_id"));
+                //Usuario usuario = new Usuario(0, (String) unContacto.get("display_name"),email);
+
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
         Log.d("TEST-ARR",arr.toString());
+    }
+
+    private void guardarUsuario(Usuario usuario) {
+        ProyectoDAO dao = new ProyectoDAO(this);
+        //dao.guardarUsuario(usuario);
+        final Usuario usu = usuario;
+
+        Thread backGroundUpdate = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpURLConnection urlConnection=null;
+                try {
+                    JSONObject usr= new JSONObject();
+
+
+                    usr.put("id", usu.getId());
+                    usr.put("nombre", usu.getNombre());
+                    usr.put("correoElectronico", usu.getCorreoElectronico());
+
+                    URL url= new URL("http://10.0.2.2:4000/usuarios");
+                    urlConnection= (HttpURLConnection) url.openConnection();
+                    urlConnection.setDoOutput(true);
+                    urlConnection.setChunkedStreamingMode(0);
+                    urlConnection.setRequestMethod("POST");
+                    urlConnection.setRequestProperty("Content-Type","application/json");
+
+                    DataOutputStream printout= new DataOutputStream(urlConnection.getOutputStream());
+
+                    printout.writeBytes(URLEncoder.encode(usr.toString(),"UTF-8"));
+                    printout.flush();
+                    printout.close();
+
+                }catch (JSONException e2) {
+                    e2.printStackTrace();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }finally{
+                    if(urlConnection!= null) urlConnection.disconnect();
+                }
+            }
+        });
+
+        backGroundUpdate.start();
+
+    }
+
+    private void guardarUsuarioEnServer(Usuario usuario) {
+        HttpURLConnection urlConnection=null;
+        try {
+            JSONObject usr= new JSONObject();
+
+
+            usr.put("id", usuario.getId());
+            usr.put("nombre", usuario.getNombre());
+            usr.put("correoElectronico", usuario.getCorreoElectronico());
+
+            URL url= new URL("http://localhost:4000/usuarios");
+            urlConnection= (HttpURLConnection) url.openConnection();
+            urlConnection.setDoOutput(true);
+            urlConnection.setChunkedStreamingMode(0);
+            urlConnection.setRequestMethod("POST");
+            urlConnection.setRequestProperty("Content-Type","application/json");
+
+            DataOutputStream printout= new DataOutputStream(urlConnection.getOutputStream());
+
+            printout.writeBytes(URLEncoder.encode(usr.toString(),"UTF-8"));
+            printout.flush();
+            printout.close();
+
+        }catch (JSONException e2) {
+            e2.printStackTrace();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }finally{
+        if(urlConnection!= null) urlConnection.disconnect();
+        }
     }
 
     private void guardarTarea() {
