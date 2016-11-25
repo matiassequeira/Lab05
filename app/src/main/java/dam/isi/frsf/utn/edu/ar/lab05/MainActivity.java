@@ -94,6 +94,11 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
+        else if (id== R.id.gestionProyectos){
+            Intent intent = new Intent(this,GestionarProyectoActivity.class);
+            startActivity(intent);
+        }
+
         return super.onOptionsItemSelected(item);
     }
 }

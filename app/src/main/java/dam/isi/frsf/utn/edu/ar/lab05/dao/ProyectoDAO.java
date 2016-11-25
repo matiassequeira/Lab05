@@ -99,7 +99,7 @@ public class ProyectoDAO {
     public void guardarUsuario(Usuario u){
         db = dbHelper.getWritableDatabase();
         ContentValues cv = new ContentValues();
-        cv.put(ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO_ALIAS, u.getNombre());
+        cv.put(ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO, u.getNombre());
         cv.put(ProyectoDBMetadata.TablaUsuariosMetadata.MAIL,u.getCorreoElectronico());
         db.insert(ProyectoDBMetadata.TABLA_USUARIOS, ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO,cv);
 
@@ -207,5 +207,15 @@ public class ProyectoDAO {
         valores.put(ProyectoDBMetadata.TablaTareasMetadata.MINUTOS_TRABAJADOS, tiempoTrabajado.intValue());
         db =dbHelper.getWritableDatabase();
         db.update(ProyectoDBMetadata.TABLA_TAREAS, valores, "_ID="+idTarea, null);
+    }
+
+    public int getIDUsuario(String nombre) {
+        db = dbHelper.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT rowid _id FROM "+ProyectoDBMetadata.TABLA_USUARIOS +" WHERE " +
+                ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO +" = ?", new String[]{nombre});
+        cursor.moveToFirst();
+
+        return cursor.getInt(0);
     }
 }

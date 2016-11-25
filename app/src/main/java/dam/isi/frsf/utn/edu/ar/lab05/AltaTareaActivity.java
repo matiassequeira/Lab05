@@ -1,10 +1,19 @@
 package dam.isi.frsf.utn.edu.ar.lab05;
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.provider.ContactsContract;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +25,7 @@ import android.widget.SeekBar;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,6 +36,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Arrays;
 
 import dam.isi.frsf.utn.edu.ar.lab05.dao.ProyectoDAO;
 import dam.isi.frsf.utn.edu.ar.lab05.dao.ProyectoDBMetadata;
@@ -45,6 +56,10 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
     ProyectoDAO proyectoDAO;
     boolean actualizacion;
     int id_tarea;
+    SpinnerAdapter adapter;
+    Cursor cursorSpinner;
+    String contactoBusqueda;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +73,7 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
         btnCancelar=(Button) findViewById(R.id.btnCancelar);
         btnAgregarUsuario = (Button) findViewById(R.id.btnAgregarUsuario);
 
-        Cursor cursorSpinner = new ProyectoDAO(this).listaUsuarios();
-        SpinnerAdapter adapter=new SimpleCursorAdapter(this,android.R.layout.simple_spinner_dropdown_item, cursorSpinner,
-                new String[]{"NOMBRE"}, new int[] {android.R.id.text1},0);
-
-        responsable.setAdapter(adapter);
-
+        cargarSpinner();
         btnGuardar.setOnClickListener(this);
         btnCancelar.setOnClickListener(this);
         btnAgregarUsuario.setOnClickListener(this);
@@ -74,6 +84,14 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
         id_tarea = intent.getIntExtra("ID_TAREA", -1);
 
     }
+
+    private void cargarSpinner() {
+        cursorSpinner = new ProyectoDAO(this).listaUsuarios();
+        adapter=new SimpleCursorAdapter(this,android.R.layout.simple_spinner_dropdown_item, cursorSpinner,
+                new String[]{"NOMBRE"}, new int[] {android.R.id.text1},0);
+        responsable.setAdapter(adapter);
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()){
@@ -112,7 +130,8 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
         alertDialog.setPositiveButton("Buscar",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog,int which) {
-                       buscarContacto(input.getText().toString());
+                        contactoBusqueda=input.getText().toString();
+                        new PermisosContacto().askForContactPermission();
                     }
                 });
         // Setting Negative "NO" Button
@@ -131,6 +150,8 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
     }
 
     private void buscarContacto(String nombreBuscado) {
+
+
         JSONArray arr = new JSONArray();
         final StringBuilder resultado = new StringBuilder();
         Uri uri = ContactsContract.Data.CONTENT_URI;
@@ -174,7 +195,10 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
 
     private void guardarUsuario(Usuario usuario) {
         ProyectoDAO dao = new ProyectoDAO(this);
-        //dao.guardarUsuario(usuario);
+        dao.guardarUsuario(usuario);
+        usuario.setId(dao.getIDUsuario(usuario.getNombre()));
+        cargarSpinner();
+
         final Usuario usu = usuario;
 
         Thread backGroundUpdate = new Thread(new Runnable() {
@@ -189,16 +213,20 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
                     usr.put("nombre", usu.getNombre());
                     usr.put("correoElectronico", usu.getCorreoElectronico());
 
-                    URL url= new URL("http://10.0.2.2:4000/usuarios");
+                    byte[] data = usr.toString().getBytes("UTF-8");
+
+                    URL url= new URL("http://10.0.2.2:4000/usuarios/");
                     urlConnection= (HttpURLConnection) url.openConnection();
                     urlConnection.setDoOutput(true);
-                    urlConnection.setChunkedStreamingMode(0);
                     urlConnection.setRequestMethod("POST");
+                    urlConnection.setFixedLengthStreamingMode(data.length);
                     urlConnection.setRequestProperty("Content-Type","application/json");
 
                     DataOutputStream printout= new DataOutputStream(urlConnection.getOutputStream());
 
-                    printout.writeBytes(URLEncoder.encode(usr.toString(),"UTF-8"));
+
+                    printout.write(data);
+                    //printout.writeBytes(URLEncoder.encode(usr.toString(),"UTF-8"));
                     printout.flush();
                     printout.close();
 
@@ -274,5 +302,58 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
         finish();
     }
 
+    public class PermisosContacto extends AppCompatActivity {
+        private boolean flagPermisoPedido;
+        private static final int PERMISSION_REQUEST_CONTACT =999;
 
+        public void askForContactPermission(){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ContextCompat.checkSelfPermission(PermisosContacto.this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(PermisosContacto.this, Manifest.permission.CALL_PHONE)) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(PermisosContacto.this);
+                        builder.setTitle("Permisos Contactos");
+                        builder.setPositiveButton(android.R.string.ok, null);
+                        builder.setMessage("Puedo leer tus contactos?");
+                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @TargetApi(Build.VERSION_CODES.M)
+                            @Override
+                            public void onDismiss(DialogInterface dialog) {
+                                flagPermisoPedido=true;
+                                requestPermissions(new String[]{Manifest.permission.READ_CONTACTS,Manifest.permission.WRITE_CONTACTS,Manifest.permission.GET_ACCOUNTS}
+                                        , PERMISSION_REQUEST_CONTACT);
+                            }
+                        });
+                        builder.show();
+                    }
+                    else {
+                        flagPermisoPedido=true;
+                        ActivityCompat.requestPermissions(PermisosContacto.this,
+                                new String[]
+                                        {Manifest.permission.READ_CONTACTS,Manifest.permission.WRITE_CONTACTS,Manifest.permission.GET_ACCOUNTS}
+                                , PERMISSION_REQUEST_CONTACT);
+                    }
+
+                }
+            }
+            //if(!flagPermisoPedido)
+            //    hacerAlgoQueRequeriaPermisosPeligrosos();
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode,String permissions[], int[] grantResults) {
+            Log.d("ESCRIBIR_JSON","req code"+requestCode+ " "
+                    + Arrays.toString(permissions)+" ** "
+                    + Arrays.toString(grantResults));
+            switch (requestCode) {
+                case PermisosContacto.PERMISSION_REQUEST_CONTACT: {
+                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        buscarContacto(contactoBusqueda);
+                    } else {
+                        Toast.makeText(PermisosContacto.this, "No permission for contacts", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+        }
+    }
 }

@@ -12,6 +12,11 @@
         android:id="@+id/consDesvio"
         android:title="Consultar desvíos"
         app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/gestionProyectos"
+        android:title="Gestionar proyectos"
+        app:showAsAction="ifRoom"/>
     
 </menu>
 
