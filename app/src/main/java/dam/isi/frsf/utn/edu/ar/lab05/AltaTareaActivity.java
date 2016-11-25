@@ -2,6 +2,7 @@ package dam.isi.frsf.utn.edu.ar.lab05;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -59,6 +60,7 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
     SpinnerAdapter adapter;
     Cursor cursorSpinner;
     String contactoBusqueda;
+    Context contexto;
 
 
     @Override
@@ -102,6 +104,7 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
                 guardarTarea();
                 break;
             case R.id.btnAgregarUsuario:
+                contexto=this;
                 abrirBusqueda();
                 break;
         }
@@ -307,9 +310,10 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
         private static final int PERMISSION_REQUEST_CONTACT =999;
 
         public void askForContactPermission(){
+            Context context=contexto;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(PermisosContacto.this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(PermisosContacto.this, Manifest.permission.CALL_PHONE)) {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(AltaTareaActivity.this, Manifest.permission.CALL_PHONE)) {
                         AlertDialog.Builder builder = new AlertDialog.Builder(PermisosContacto.this);
                         builder.setTitle("Permisos Contactos");
                         builder.setPositiveButton(android.R.string.ok, null);
@@ -327,7 +331,7 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
                     }
                     else {
                         flagPermisoPedido=true;
-                        ActivityCompat.requestPermissions(PermisosContacto.this,
+                        ActivityCompat.requestPermissions(AltaTareaActivity.this,
                                 new String[]
                                         {Manifest.permission.READ_CONTACTS,Manifest.permission.WRITE_CONTACTS,Manifest.permission.GET_ACCOUNTS}
                                 , PERMISSION_REQUEST_CONTACT);
@@ -335,8 +339,8 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
 
                 }
             }
-            //if(!flagPermisoPedido)
-            //    hacerAlgoQueRequeriaPermisosPeligrosos();
+            if(!flagPermisoPedido)
+                buscarContacto(contactoBusqueda);
         }
 
         @Override
