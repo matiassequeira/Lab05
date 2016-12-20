@@ -2,9 +2,11 @@ package dam.isi.frsf.utn.edu.ar.lab05;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -110,10 +112,33 @@ public class TareaCursorAdapter extends CursorAdapter {
         btnEliminar.setTag(cursor.getInt(cursor.getColumnIndex("_id")));
         btnEliminar.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                final Integer idTarea= (Integer) view.getTag();
-                myDao.borrarTarea(idTarea);
-                handlerRefresh.sendEmptyMessage(1);
+            public void onClick(final View view) {
+
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(contexto);
+                // Setting Dialog Title
+                alertDialog.setTitle("Eliminar Tarea");
+                // Setting Dialog Message
+                alertDialog.setMessage("Estas seguro que deseas eliminar la tarea?");
+                // Setting Positive "Yes" Button
+                alertDialog.setPositiveButton("Aceptar",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int which) {
+
+                                final Integer idTarea= (Integer) view.getTag();
+                                myDao.borrarTarea(idTarea);
+                                handlerRefresh.sendEmptyMessage(1);
+                            }
+                        });
+                // Setting Negative "NO" Button
+                alertDialog.setNegativeButton("Cancelar",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Write your code here to execute after dialog
+                                dialog.cancel();
+                            }
+                        });
+                // Showing Alert Message
+                alertDialog.show();
             }
         });
 

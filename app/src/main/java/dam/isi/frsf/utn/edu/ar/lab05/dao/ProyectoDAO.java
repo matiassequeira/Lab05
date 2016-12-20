@@ -64,6 +64,12 @@ public class ProyectoDAO {
         return proyecto;
     }
 
+    public void borrarProyecto(String nombre){
+        db = dbHelper.getWritableDatabase();
+        //db.delete(ProyectoDBMetadata.TABLA_PROYECTO, ProyectoDBMetadata.TablaProyectoMetadata.TIT_PROY_ALIAS+" = "+nombre,null);
+        db.rawQuery("DELETE FROM "+ProyectoDBMetadata.TABLA_PROYECTO+" WHERE "+ProyectoDBMetadata.TablaProyectoMetadata.TITULO+" = '"+nombre+"'",null);
+    }
+
     public Usuario buscarUsuario(int id){
         db = dbHelper.getReadableDatabase();
         Usuario usr = new Usuario();
@@ -104,6 +110,15 @@ public class ProyectoDAO {
         db.insert(ProyectoDBMetadata.TABLA_USUARIOS, ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO,cv);
 
     }
+    public void guardarProyecto(Proyecto proyecto){
+        db = dbHelper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(ProyectoDBMetadata.TablaProyectoMetadata.TITULO, proyecto.getNombre());
+
+        db.insert(ProyectoDBMetadata.TABLA_PROYECTO, ProyectoDBMetadata.TablaProyectoMetadata.TITULO,cv);
+
+    }
+
     public void nuevaTarea(Tarea t){
         db = dbHelper.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -214,6 +229,16 @@ public class ProyectoDAO {
 
         Cursor cursor = db.rawQuery("SELECT rowid _id FROM "+ProyectoDBMetadata.TABLA_USUARIOS +" WHERE " +
                 ProyectoDBMetadata.TablaUsuariosMetadata.USUARIO +" = ?", new String[]{nombre});
+        cursor.moveToFirst();
+
+        return cursor.getInt(0);
+    }
+
+    public int getIDProyecto(String nombre) {
+        db = dbHelper.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT rowid _id FROM "+ProyectoDBMetadata.TABLA_PROYECTO+" WHERE " +
+                ProyectoDBMetadata.TablaProyectoMetadata.TITULO+" = ?", new String[]{nombre});
         cursor.moveToFirst();
 
         return cursor.getInt(0);

@@ -180,14 +180,10 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
                 fila++;
                 Log.d("TEST-ARR","fila : "+fila);
 
-                // elegir columnas de ejemplo
-                //resultado.append(unContacto.get("name_raw_contact_id")
-                //        +" - "+unContacto.get("display_name")+ " - "+ unContacto.get("data1"));
-
                 guardarUsuario(new Usuario(0, (String) unContacto.get("display_name"), (String) unContacto.get("data1") ));
+
                 break;
-                //String email=buscarEmail((String) unContacto.get("name_raw_contact_id"));
-                //Usuario usuario = new Usuario(0, (String) unContacto.get("display_name"),email);
+
 
             }
         } catch (JSONException e) {
@@ -247,37 +243,6 @@ public class AltaTareaActivity extends AppCompatActivity implements View.OnClick
 
     }
 
-    private void guardarUsuarioEnServer(Usuario usuario) {
-        HttpURLConnection urlConnection=null;
-        try {
-            JSONObject usr= new JSONObject();
-
-
-            usr.put("id", usuario.getId());
-            usr.put("nombre", usuario.getNombre());
-            usr.put("correoElectronico", usuario.getCorreoElectronico());
-
-            URL url= new URL("http://localhost:4000/usuarios");
-            urlConnection= (HttpURLConnection) url.openConnection();
-            urlConnection.setDoOutput(true);
-            urlConnection.setChunkedStreamingMode(0);
-            urlConnection.setRequestMethod("POST");
-            urlConnection.setRequestProperty("Content-Type","application/json");
-
-            DataOutputStream printout= new DataOutputStream(urlConnection.getOutputStream());
-
-            printout.writeBytes(URLEncoder.encode(usr.toString(),"UTF-8"));
-            printout.flush();
-            printout.close();
-
-        }catch (JSONException e2) {
-            e2.printStackTrace();
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }finally{
-        if(urlConnection!= null) urlConnection.disconnect();
-        }
-    }
 
     private void guardarTarea() {
         //no hay nada validado
