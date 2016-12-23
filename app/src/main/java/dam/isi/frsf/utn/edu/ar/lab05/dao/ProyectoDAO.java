@@ -66,7 +66,6 @@ public class ProyectoDAO {
 
     public void borrarProyecto(String nombre){
         db = dbHelper.getWritableDatabase();
-        //db.delete(ProyectoDBMetadata.TABLA_PROYECTO, ProyectoDBMetadata.TablaProyectoMetadata.TIT_PROY_ALIAS+" = "+nombre,null);
         db.rawQuery("DELETE FROM "+ProyectoDBMetadata.TABLA_PROYECTO+" WHERE "+ProyectoDBMetadata.TablaProyectoMetadata.TITULO+" = '"+nombre+"'",null);
     }
 
@@ -133,7 +132,7 @@ public class ProyectoDAO {
     }
 
     public void actualizarTarea(Tarea t){
-        db = dbHelper.getReadableDatabase();
+        db = dbHelper.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(ProyectoDBMetadata.TablaTareasMetadata.TAREA,t.getDescripcion());
         cv.put(ProyectoDBMetadata.TablaTareasMetadata.HORAS_PLANIFICADAS,t.getHorasEstimadas());
@@ -143,6 +142,14 @@ public class ProyectoDAO {
         cv.put(ProyectoDBMetadata.TablaTareasMetadata.PROYECTO, t.getProyecto().getId());
 
         db.update(ProyectoDBMetadata.TABLA_TAREAS, cv, "_ID = "+t.getId(),null);
+    }
+
+    public void actualizarProyecto(Proyecto p){
+        db = dbHelper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(ProyectoDBMetadata.TablaProyectoMetadata.TITULO, p.getNombre());
+
+        db.update(ProyectoDBMetadata.TABLA_PROYECTO, cv, "_ID = "+p.getId(),null);
     }
 
     public void borrarTarea(int idTarea){

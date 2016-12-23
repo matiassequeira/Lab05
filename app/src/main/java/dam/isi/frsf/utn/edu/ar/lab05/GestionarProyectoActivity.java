@@ -37,9 +37,11 @@ public class GestionarProyectoActivity extends AppCompatActivity implements View
     Button btnNuevo;
     Button btnModificar;
     Button btnEliminar;
+    Button btnVerTareas;
     ListView lvProyectos;
     List<String> listaProyectos;
     ArrayAdapter<String> adapter;
+    String tareas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +54,8 @@ public class GestionarProyectoActivity extends AppCompatActivity implements View
         btnModificar.setOnClickListener(this);
         btnNuevo=(Button) findViewById(R.id.buttonNuevoProyecto);
         btnNuevo.setOnClickListener(this);
+        btnVerTareas = (Button) findViewById(R.id.buttonVerTareas);
+        btnVerTareas.setOnClickListener(this);
 
         lvProyectos = (ListView) findViewById(R.id.listViewProyectos);
 
@@ -109,12 +113,14 @@ public class GestionarProyectoActivity extends AppCompatActivity implements View
         switch (v.getId()){
 
             case R.id.buttonEliminarProyecto:
-                final String proyectoSelec = (String)lvProyectos.getAdapter().getItem(lvProyectos.getCheckedItemPosition());
-                if(proyectoSelec==null){
+
+                if(lvProyectos.getCheckedItemPosition()== -1){
                     Toast toast = Toast.makeText(this, "Debe seleccionar un proyecto a eliminar", Toast.LENGTH_SHORT);
                     toast.show();
                 }
                 else{//eliminar proyecto de la BD y del Servidor
+                    final String proyectoSelec = (String)lvProyectos.getAdapter().getItem(lvProyectos.getCheckedItemPosition());
+
                     android.support.v7.app.AlertDialog.Builder alertDialog = new android.support.v7.app.AlertDialog.Builder(this);
 
                     alertDialog.setTitle("Eliminar " + proyectoSelec);
@@ -143,6 +149,46 @@ public class GestionarProyectoActivity extends AppCompatActivity implements View
                 break;
 
             case R.id.buttonModificarProyecto:
+                if(lvProyectos.getCheckedItemPosition()== -1){
+                    Toast toast = Toast.makeText(this, "Debe seleccionar un proyecto a modificar", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                else{//actualizar proyecto en BD y Servidor
+                    final String proyectoSelec = (String)lvProyectos.getAdapter().getItem(lvProyectos.getCheckedItemPosition());
+
+                    AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+                    alertDialog.setTitle("Modificar "+proyectoSelec);
+                    alertDialog.setMessage("Introduzca el nuevo nombre del proyecto:");
+
+                    final EditText input = new EditText(this);
+                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.MATCH_PARENT);
+                    input.setLayoutParams(lp);
+                    alertDialog.setView(input);
+
+                    // Setting Positive "Yes" Button
+                    alertDialog.setPositiveButton("Modificar",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int which) {
+                                    modificarProyecto(proyectoSelec, input.getText().toString());
+                                    listaProyectos.remove(proyectoSelec);
+                                    listaProyectos.add(input.getText().toString());
+                                    adapter.notifyDataSetChanged();
+                                }
+                            });
+                    // Setting Negative "NO" Button
+                    alertDialog.setNegativeButton("Cancelar",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // Write your code here to execute after dialog
+                                    dialog.cancel();
+                                }
+                            });
+
+                    alertDialog.show();
+
+                }
                 break;
 
             case R.id.buttonNuevoProyecto:
@@ -176,6 +222,36 @@ public class GestionarProyectoActivity extends AppCompatActivity implements View
                         });
 
                 alertDialog.show();
+                break;
+            case R.id.buttonVerTareas:
+                if(lvProyectos.getCheckedItemPosition()== -1){
+                    Toast toast = Toast.makeText(this, "Debe seleccionar un proyecto para ver sus tareas", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                else {//actualizar proyecto en BD y Servidor
+                    final String proyectoSelec = (String) lvProyectos.getAdapter().getItem(lvProyectos.getCheckedItemPosition());
+                    try {
+                        verTareasProyecto(proyectoSelec);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    android.support.v7.app.AlertDialog.Builder Dialog= new android.support.v7.app.AlertDialog.Builder(this);
+
+                    Dialog.setTitle("Tareas del proyecto " + proyectoSelec+":");
+
+                    Dialog.setMessage(tareas);
+                    // Setting Positive "Yes" Button
+                    Dialog.setPositiveButton("Aceptar",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int which) {
+                                    tareas = "";
+                                    dialog.cancel();
+                                }
+                            });
+                    // Showing Alert Message
+                    Dialog.show();
+                }
                 break;
         }
     }
@@ -253,6 +329,95 @@ public class GestionarProyectoActivity extends AppCompatActivity implements View
         });
 
         backGroundUpdate.start();
+    }
+
+    private void modificarProyecto(final String nomActual, final String nomNuevo){
+
+        Thread backGroundUpdate = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpURLConnection urlConnection=null;
+                try {
+                    ProyectoDAO dao = new ProyectoDAO(GestionarProyectoActivity.this);
+                    int idProyecto = dao.getIDProyecto(nomActual);
+
+                    Proyecto proyecto = new Proyecto();
+                    proyecto.setId(idProyecto);
+                    proyecto.setNombre(nomNuevo);
+                    dao.actualizarProyecto(proyecto);
+
+                    JSONObject proyectoJSON = new JSONObject();
+                    proyectoJSON.put("id", idProyecto);
+                    proyectoJSON.put("nombre", nomNuevo);
+
+                    URL url= new URL("http://10.0.2.2:4000/proyectos/"+idProyecto);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setDoOutput(true);
+                    urlConnection.setRequestMethod("PUT");
+                    urlConnection.setRequestProperty("Content-Type", "application/json");
+                    urlConnection.setRequestProperty("Accept", "application/json");
+                    OutputStreamWriter osw = new OutputStreamWriter( urlConnection.getOutputStream());
+                    osw.write(proyectoJSON.toString());
+                    osw.flush();
+                    osw.close();
+                    System.err.println( urlConnection.getResponseCode());
+
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } finally{
+                    if(urlConnection!= null) urlConnection.disconnect();
+                }
+            }
+        });
+
+        backGroundUpdate.start();
+    }
+
+    private void verTareasProyecto(final String nombreProyecto) throws InterruptedException {
+        Thread backGroundUpdate = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpURLConnection urlConnection = null;
+                try {
+                    ProyectoDAO dao = new ProyectoDAO(GestionarProyectoActivity.this);
+                    int idProyecto = dao.getIDProyecto(nombreProyecto);
+
+                    URL url = new URL("http://10.0.2.2:4000/tareas?proyectoId="+idProyecto);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                    InputStreamReader isw = new InputStreamReader(in);
+                    StringBuilder sb = new StringBuilder();
+                    int data = isw.read();
+                    while (data != -1) {
+                        char current = (char) data;
+                        sb.append(current);
+                        data = isw.read();
+                    }
+                    Log.d("TEST-ARR", sb.toString());
+
+                    JSONArray JSONproyectos = new JSONArray(sb.toString());
+                    Log.d("JSONobject", JSONproyectos.toString());
+
+                    tareas = "";
+                    for(int i=0; i<JSONproyectos.length(); i++) {
+                        String descTarea = JSONproyectos.getJSONObject(i).getString("descripcion");
+                        tareas += descTarea + "\n";
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }catch (Throwable t){
+                    Log.e("JSONobject", "Could not parse malformed JSON");
+                }finally {
+                    if (urlConnection != null)
+                        urlConnection.disconnect();
+                }
+            }
+        });
+
+        backGroundUpdate.start();
+        backGroundUpdate.join();
     }
 }
 
